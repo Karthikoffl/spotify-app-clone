@@ -47,6 +47,8 @@ function BottomTabs() {
 const Stack = createNativeStackNavigator();
 function Navigation() {
   <NavigationContainer>
-    <Stack.Navigator></Stack.Navigator>
+    <Stack.Navigator>
+      <Stack.Screens />
+    </Stack.Navigator>
   </NavigationContainer>;
 }
