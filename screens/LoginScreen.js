@@ -5,53 +5,72 @@ import { Entypo, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import * as WebBrowser from "expo-web-browser";
-import { ResponseType, useAuthRequest } from "expo-auth-session";
+import {
+  makeRedirectUri,
+  ResponseType,
+  useAuthRequest,
+} from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const discovery = {
-    authorizationEndpoint: "https://accounts.spotify.com/authorize",
-    tokenEndpoint: "https://accounts.spotify.com/api/token",
-  };
   const [request, response, promptAsync] = useAuthRequest(
     {
-      responseType: ResponseType.Token,
       clientId: "1f47cf563e1f4a5c8d08c39abaaf95b1",
-      clientSecret: "d7645488462340cf9d91db926fbce8a7",
-      scopes: [
-        "user-read-email",
-        "user-library-read",
-        "user-read-recently-played",
-        "user-top-read",
-        "playlist-read-private",
-        "playlist-read-collaborative",
-        "playlist-modify-public", // or "playlist-modify-private"
-      ],
-      // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
-      // this must be set to false
-      usePKCE: false,
       redirectUri: "exp://192.168.0.107:19000/--/spotify-auth-callback",
+      scopes: ["user-read-email", "playlist-modify-public"],
+      responseType: "code",
     },
-    discovery
+    { authorizationEndpoint: "https://accounts.spotify.com/authorize" }
   );
 
   useEffect(() => {
     if (response?.type === "success") {
-      const { accessToken } = response.params;
-      console.log("Access Token", accessToken);
+      const { code } = response.params;
+      exchangeCodeForToken(code);
     }
   }, [response]);
 
+  const exchangeCodeForToken = async (code) => {
+    const tokenEndpoint = "https://accounts.spotify.com/api/token";
+    // const redirectUri = makeRedirectUri({ useProxy: true });
+
+    const params = {
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: "exp://192.168.0.107:19000/--/spotify-auth-callback",
+      client_id: "1f47cf563e1f4a5c8d08c39abaaf95b1",
+      client_secret: "d7645488462340cf9d91db926fbce8a7",
+    };
+
+    try {
+      const response = await fetch(tokenEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(params).toString(),
+      });
+
+      const { access_token, expires_in } = await response.json();
+      const expirationDate = new Date().getTime();
+      console.log("Access Token:", code);
+      console.log("Expiration Date:", new Date(expirationDate));
+    } catch (error) {
+      console.error("Error exchanging code for access token:", error);
+    }
+    // console.log(code);
+  };
+
   // useEffect(() => {
   //   const checkTokenValidity = async () => {
-  //     const accessToken = await AsyncStorage.getItem("token");
+  //     const code = await AsyncStorage.getItem("token");
   //     const expirationDate = await AsyncStorage.getItem("expirationDate");
-  //     console.log("Access token", accessToken);
+  //     console.log("Access token", code);
   //     console.log("Expiration date", expirationDate);
 
-  //     if (accessToken && expirationDate) {
+  //     if (code && expirationDate) {
   //       const currentTime = Date.now();
   //       if (currentTime < parseInt(expirationDate)) {
   //         // here the token is still valid
@@ -65,6 +84,7 @@ const LoginScreen = () => {
   //   };
   //   checkTokenValidity();
   // }, []);
+
   // async function authenticate() {
   //   const config = {
   //     issuer: "https://accounts.spotify.com",
@@ -118,7 +138,7 @@ const LoginScreen = () => {
           onPress={() => promptAsync()}
           style={{
             backgroundColor: "#1DB954",
-            padding: 10,
+            padding: 13,
             marginLeft: "auto",
             marginRight: "auto",
             width: 300,
