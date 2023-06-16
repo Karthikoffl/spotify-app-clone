@@ -5,34 +5,42 @@ import { Entypo, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+import { ResponseType, useAuthRequest } from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const discovery = {
-  authorizationEndpoint: "https://accounts.spotify.com/authorize",
-  tokenEndpoint: "https://accounts.spotify.com/api/token",
-};
-
 const LoginScreen = () => {
   const navigation = useNavigation();
+  const discovery = {
+    authorizationEndpoint: "https://accounts.spotify.com/authorize",
+    tokenEndpoint: "https://accounts.spotify.com/api/token",
+  };
   const [request, response, promptAsync] = useAuthRequest(
     {
+      responseType: ResponseType.Token,
       clientId: "1f47cf563e1f4a5c8d08c39abaaf95b1",
-      scopes: ["user-read-email", "playlist-modify-public"],
+      clientSecret: "d7645488462340cf9d91db926fbce8a7",
+      scopes: [
+        "user-read-email",
+        "user-library-read",
+        "user-read-recently-played",
+        "user-top-read",
+        "playlist-read-private",
+        "playlist-read-collaborative",
+        "playlist-modify-public", // or "playlist-modify-private"
+      ],
       // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
       // this must be set to false
       usePKCE: false,
-      redirectUri: makeRedirectUri({
-        scheme: "your.app",
-      }),
+      redirectUri: "exp://192.168.0.107:19000/--/spotify-auth-callback",
     },
     discovery
   );
 
   useEffect(() => {
     if (response?.type === "success") {
-      const { code } = response.params;
+      const { accessToken } = response.params;
+      console.log("Access Token", accessToken);
     }
   }, [response]);
 
