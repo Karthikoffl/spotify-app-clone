@@ -42,7 +42,7 @@ const LoginScreen = () => {
         "playlist-read-collaborative",
         "playlist-modify-public", // or "playlist-modify-private"
       ],
-      redirectUrl: "exp://localhost:19000/--/spotify-auth-callback",
+      redirectUrl: "exp://192.168.0.107:19000/--/spotify-auth-callback",
     };
     const result = await AppAuth.authAsync(config);
     console.log(result);
