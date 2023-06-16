@@ -2,6 +2,7 @@
   "expo": {
     "name": "spotify-app-clone",
     "slug": "spotify-app-clone",
+    "scheme": "spotify-app-clone",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

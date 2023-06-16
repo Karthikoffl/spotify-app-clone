@@ -1,60 +1,88 @@
-import { StyleSheet, Text, View, SafeAreaView, Pressable } from "react-native";
+import { Text, View, SafeAreaView, Pressable } from "react-native";
 import React, { useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { Entypo, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import * as AppAuth from "expo-app-auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const discovery = {
+  authorizationEndpoint: "https://accounts.spotify.com/authorize",
+  tokenEndpoint: "https://accounts.spotify.com/api/token",
+};
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  useEffect(() => {
-    const checkTokenValidity = async () => {
-      const accessToken = await AsyncStorage.getItem("token");
-      const expirationDate = await AsyncStorage.getItem("expirationDate");
-      console.log("Access token", accessToken);
-      console.log("Expiration date", expirationDate);
-
-      if (accessToken && expirationDate) {
-        const currentTime = Date.now();
-        if (currentTime < parseInt(expirationDate)) {
-          // here the token is still valid
-          navigation.replace("Main");
-        } else {
-          // token would be expired so we need to remove it from async storage
-          AsyncStorage.removeItem("token");
-          AsyncStorage.removeItem("expirationDate");
-        }
-      }
-    };
-    checkTokenValidity();
-  }, []);
-  async function authenticate() {
-    const config = {
-      issuer: "https://accounts.spotify.com",
+  const [request, response, promptAsync] = useAuthRequest(
+    {
       clientId: "1f47cf563e1f4a5c8d08c39abaaf95b1",
-      scopes: [
-        "user-read-email",
-        "user-library-read",
-        "user-read-recently-played",
-        "user-top-read",
-        "playlist-read-private",
-        "playlist-read-collaborative",
-        "playlist-modify-public", // or "playlist-modify-private"
-      ],
-      redirectUrl: "exp://192.168.0.107:19000/--/spotify-auth-callback",
-    };
-    const result = await AppAuth.authAsync(config);
-    console.log(result);
-    if (result.accessToken) {
-      const expirationDate = new Date(
-        result.accessTokenExpirationDate
-      ).getTime();
-      AsyncStorage.setItem("token", result.accessToken);
-      AsyncStorage.setItem("expirationDate", expirationDate.toString());
-      navigation.navigate("Main");
+      scopes: ["user-read-email", "playlist-modify-public"],
+      // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
+      // this must be set to false
+      usePKCE: false,
+      redirectUri: makeRedirectUri({
+        scheme: "your.app",
+      }),
+    },
+    discovery
+  );
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { code } = response.params;
     }
-  }
+  }, [response]);
+
+  // useEffect(() => {
+  //   const checkTokenValidity = async () => {
+  //     const accessToken = await AsyncStorage.getItem("token");
+  //     const expirationDate = await AsyncStorage.getItem("expirationDate");
+  //     console.log("Access token", accessToken);
+  //     console.log("Expiration date", expirationDate);
+
+  //     if (accessToken && expirationDate) {
+  //       const currentTime = Date.now();
+  //       if (currentTime < parseInt(expirationDate)) {
+  //         // here the token is still valid
+  //         navigation.replace("Main");
+  //       } else {
+  //         // token would be expired so we need to remove it from async storage
+  //         AsyncStorage.removeItem("token");
+  //         AsyncStorage.removeItem("expirationDate");
+  //       }
+  //     }
+  //   };
+  //   checkTokenValidity();
+  // }, []);
+  // async function authenticate() {
+  //   const config = {
+  //     issuer: "https://accounts.spotify.com",
+  //     clientId: "1f47cf563e1f4a5c8d08c39abaaf95b1",
+  //     scopes: [
+  //       "user-read-email",
+  //       "user-library-read",
+  //       "user-read-recently-played",
+  //       "user-top-read",
+  //       "playlist-read-private",
+  //       "playlist-read-collaborative",
+  //       "playlist-modify-public", // or "playlist-modify-private"
+  //     ],
+  //     redirectUrl: "exp://localhost:19000/--/spotify-auth-callback",
+  //   };
+  //   const result = await AppAuth.authAsync(config);
+  //   console.log(result);
+  //   if (result.accessToken) {
+  //     const expirationDate = new Date(
+  //       result.accessTokenExpirationDate
+  //     ).getTime();
+  //     AsyncStorage.setItem("token", result.accessToken);
+  //     AsyncStorage.setItem("expirationDate", expirationDate.toString());
+  //     navigation.navigate("Main");
+  //   }
+  // }
 
   return (
     <LinearGradient colors={["#040306", "#131624"]} style={{ flex: 1 }}>
@@ -79,7 +107,7 @@ const LoginScreen = () => {
         </Text>
         <View style={{ height: 80 }} />
         <Pressable
-          onPress={authenticate}
+          onPress={() => promptAsync()}
           style={{
             backgroundColor: "#1DB954",
             padding: 10,
@@ -92,7 +120,7 @@ const LoginScreen = () => {
             marginVertical: 10,
           }}
         >
-          <Text>Sign in with spotify</Text>
+          <Text style={{ fontWeight: "bold" }}>Sign in with spotify</Text>
         </Pressable>
         <Pressable
           style={{
