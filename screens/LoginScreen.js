@@ -19,7 +19,15 @@ const LoginScreen = () => {
     {
       clientId: "1f47cf563e1f4a5c8d08c39abaaf95b1",
       redirectUri: "exp://192.168.0.107:19000/--/spotify-auth-callback",
-      scopes: ["user-read-email", "playlist-modify-public"],
+      scopes: [
+        "user-read-email",
+        "user-library-read",
+        "user-read-recently-played",
+        "user-top-read",
+        "playlist-read-private",
+        "playlist-read-collaborative",
+        "playlist-modify-public", // or "playlist-modify-private"
+      ],
       responseType: "code",
     },
     { authorizationEndpoint: "https://accounts.spotify.com/authorize" }
@@ -60,7 +68,6 @@ const LoginScreen = () => {
     } catch (error) {
       console.error("Error exchanging code for access token:", error);
     }
-    // console.log(code);
   };
 
   // useEffect(() => {
