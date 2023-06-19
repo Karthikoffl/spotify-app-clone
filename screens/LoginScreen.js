@@ -15,6 +15,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = () => {
   const navigation = useNavigation();
+
   const [request, response, promptAsync] = useAuthRequest(
     {
       clientId: "1f47cf563e1f4a5c8d08c39abaaf95b1",
@@ -154,6 +155,7 @@ const LoginScreen = () => {
             justifyContent: "center",
             marginVertical: 10,
           }}
+          disabled={!request}
         >
           <Text style={{ fontWeight: "bold" }}>Sign in with spotify</Text>
         </Pressable>
